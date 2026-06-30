@@ -1,0 +1,124 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [main, master, codex/**]
+  pull_request:
+  workflow_dispatch:
+
+# 同一 PR 后续 push 取消旧 build
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 1. iOS 模拟器 .app —— 在 Xcode 里直接打开运行用
+  build-simulator:
+    name: Simulator (.app)
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (iOS Simulator)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project iospro.xcodeproj \
+            -scheme iospro \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tail -200
+
+      - name: Verify .app exists
+        run: |
+          APP="build/Build/Products/Debug-iphonesimulator/iospro.app"
+          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; exit 1; fi
+          echo "Bundle: $APP"
+          ls -la "$APP"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" "$APP/Info.plist"
+
+      - name: Upload simulator artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iospro-simulator
+          path: build/Build/Products/Debug-iphonesimulator/iospro.app
+          retention-days: 14
+          if-no-files-found: error
+
+  # 2. 真机未签名 .app —— 用 AltStore / Sideloadly 自签后装到 iPad
+  build-device-unsigned:
+    name: Device (unsigned, for AltStore)
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (iOS Device, unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project iospro.xcodeproj \
+            -scheme iospro \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
+            build 2>&1 | tail -200
+
+      - name: Package as .ipa
+        run: |
+          APP="build/Build/Products/Release-iphoneos/iospro.app"
+          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; exit 1; fi
+          mkdir -p payload
+          cp -R "$APP" payload/iospro.app
+          # 写一个最小的 Payload 目录结构
+          mkdir -p dist/Payload
+          mv payload/iospro.app dist/Payload/iospro.app
+          cd dist
+          zip -r ../iospro-device-unsigned.ipa Payload
+          cd ..
+          ls -la iospro-device-unsigned.ipa
+
+      - name: Upload device artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iospro-device-unsigned
+          path: iospro-device-unsigned.ipa
+          retention-days: 14
+          if-no-files-found: error
