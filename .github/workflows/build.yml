@@ -58,11 +58,15 @@ jobs:
             echo "=== project.yml ==="
             cat project.yml
             xcodegen generate
+            # Force project format to 70 (Xcode 15.4) since XcodeGen 2.45 defaults to 77 (Xcode 16)
+            sed -i.bak 's/objectVersion = [0-9]*/objectVersion = 70/' iospro.xcodeproj/project.pbxproj
             echo "=== after generate ==="
             ls -la
             echo "=== xcodeproj check ==="
             if [ -d "iospro.xcodeproj" ]; then
               ls -la iospro.xcodeproj
+              echo "=== pbxproj objectVersion ==="
+              grep "objectVersion" iospro.xcodeproj/project.pbxproj
             else
               echo "ERROR: iospro.xcodeproj not generated"
               exit 1
@@ -131,7 +135,7 @@ jobs:
           git status --short
           git commit -m "ci-debug: sim logs from run ${GITHUB_RUN_NUMBER}" || true
           git push origin ci-debug --force 2>&1
-          echo "=== Done ==="
+          echo "=== Sim Done ==="
 
   build-device-unsigned:
     name: Device (unsigned, for AltStore)
@@ -147,7 +151,7 @@ jobs:
         run: brew install xcodegen > ci-logs/dev-1-xcodegen.log 2>&1
 
       - name: Generate Xcode project
-        run: xcodegen generate > ci-logs/dev-2-generate.log 2>&1
+        run: xcodegen generate > ci-logs/dev-2-generate.log 2>&1 && sed -i.bak 's/objectVersion = [0-9]*/objectVersion = 70/' iospro.xcodeproj/project.pbxproj >> ci-logs/dev-2-generate.log 2>&1 && echo "objectVersion forced to 70" >> ci-logs/dev-2-generate.log
 
       - name: Build (iOS Device, unsigned)
         run: xcodebuild -project iospro.xcodeproj -scheme iospro -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER="" DEVELOPMENT_TEAM="" build > ci-logs/dev-3-build.log 2>&1
@@ -185,8 +189,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Fetch logs from other jobs (e.g., sim) to preserve them
+          git fetch origin ci-debug --depth=1 2>/dev/null || true
           git checkout -B ci-debug
+          git checkout origin/ci-debug -- ci-logs/ 2>/dev/null || true
           git add -f ci-logs/
           git status --short
           git commit -m "ci-debug: dev logs from run ${GITHUB_RUN_NUMBER}" || true
           git push origin ci-debug --force 2>&1
+          echo "=== Dev Done ==="
