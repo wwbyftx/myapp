@@ -10,6 +10,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# 写权限：默认 GITHUB_TOKEN 不一定有
+permissions:
+  contents: write
+
 jobs:
   build-simulator:
     name: Simulator (.app)
@@ -36,7 +40,6 @@ jobs:
           xcodebuild -list -project iospro.xcodeproj
 
       - name: Build (iOS Simulator)
-        id: build
         run: |
           set -o pipefail
           xcodebuild \
@@ -51,9 +54,8 @@ jobs:
             build > build-sim.log 2>&1
           ec=$?
           echo "=== xcodebuild exit=$ec ==="
-          echo "=== last 120 lines of build-sim.log ==="
-          tail -120 build-sim.log
-          echo "exit=$ec" >> "$GITHUB_OUTPUT"
+          echo "=== last 150 lines of build-sim.log ==="
+          tail -150 build-sim.log
           exit $ec
 
       - name: Verify .app exists
@@ -70,14 +72,14 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      - name: Push build log to debug branch on failure
-        if: failure()
+      - name: Push build log to debug branch
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B ci-debug
           mkdir -p ci-logs
-          cp build-sim.log "ci-logs/build-sim-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log"
+          cp build-sim.log "ci-logs/build-sim-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log" 2>/dev/null || echo "no build-sim.log" > "ci-logs/build-sim-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log"
           git add ci-logs/
           git commit -m "ci-debug: build-sim log from run ${GITHUB_RUN_NUMBER}" || true
           git push origin ci-debug --force 2>&1
@@ -99,7 +101,6 @@ jobs:
         run: xcodegen generate
 
       - name: Build (iOS Device, unsigned)
-        id: build
         run: |
           set -o pipefail
           xcodebuild \
@@ -117,8 +118,8 @@ jobs:
             build > build-dev.log 2>&1
           ec=$?
           echo "=== xcodebuild exit=$ec ==="
-          echo "=== last 120 lines of build-dev.log ==="
-          tail -120 build-dev.log
+          echo "=== last 150 lines of build-dev.log ==="
+          tail -150 build-dev.log
           exit $ec
 
       - name: Package as .ipa
@@ -138,14 +139,14 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      - name: Push build log to debug branch on failure
-        if: failure()
+      - name: Push build log to debug branch
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B ci-debug
           mkdir -p ci-logs
-          cp build-dev.log "ci-logs/build-dev-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log"
+          cp build-dev.log "ci-logs/build-dev-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log" 2>/dev/null || echo "no build-dev.log" > "ci-logs/build-dev-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log"
           git add ci-logs/
           git commit -m "ci-debug: build-dev log from run ${GITHUB_RUN_NUMBER}" || true
           git push origin ci-debug --force 2>&1
