@@ -10,7 +10,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# 写权限：默认 GITHUB_TOKEN 不一定有
 permissions:
   contents: write
 
@@ -22,47 +21,97 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup debug log dir
+        run: mkdir -p ci-logs
+
       - name: Show toolchain
         run: |
-          echo "=== xcode-select ==="; xcode-select -p
-          echo "=== xcodebuild -version ==="; xcodebuild -version
-          echo "=== Available SDKs ==="; xcodebuild -showsdks | head -40
+          {
+            echo "=== pwd ==="
+            pwd
+            echo "=== ls ==="
+            ls -la
+            echo "=== xcode-select ==="
+            xcode-select -p
+            echo "=== xcodebuild -version ==="
+            xcodebuild -version
+            echo "=== Available SDKs ==="
+            xcodebuild -showsdks
+            echo "=== XcodeGen version ==="
+            xcodegen --version 2>&1 || echo "xcodegen not installed"
+          } > ci-logs/sim-1-toolchain.log 2>&1
+          cat ci-logs/sim-1-toolchain.log
 
       - name: Install XcodeGen
-        run: brew install xcodegen
+        run: |
+          {
+            brew install xcodegen
+            xcodegen --version
+          } > ci-logs/sim-2-xcodegen.log 2>&1
+          cat ci-logs/sim-2-xcodegen.log
 
       - name: Generate Xcode project
-        run: xcodegen generate
+        run: |
+          {
+            echo "=== before generate ==="
+            ls -la
+            echo "=== project.yml ==="
+            cat project.yml
+            xcodegen generate
+            echo "=== after generate ==="
+            ls -la
+            echo "=== xcodeproj check ==="
+            if [ -d "iospro.xcodeproj" ]; then
+              ls -la iospro.xcodeproj
+            else
+              echo "ERROR: iospro.xcodeproj not generated"
+              exit 1
+            fi
+          } > ci-logs/sim-3-generate.log 2>&1
+          ec=$?
+          cat ci-logs/sim-3-generate.log
+          exit $ec
 
       - name: List schemes & targets
         run: |
-          echo "=== schemes ==="
-          xcodebuild -list -project iospro.xcodeproj
+          {
+            xcodebuild -list -project iospro.xcodeproj
+          } > ci-logs/sim-4-list.log 2>&1
+          ec=$?
+          cat ci-logs/sim-4-list.log
+          exit $ec
 
       - name: Build (iOS Simulator)
+        run: xcodebuild -project iospro.xcodeproj -scheme iospro -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build > ci-logs/sim-5-build.log 2>&1
+        env:
+          SHELLOPTS: pipefail
+
+      - name: Report build status
+        if: always()
         run: |
-          set -o pipefail
-          xcodebuild \
-            -project iospro.xcodeproj \
-            -scheme iospro \
-            -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            build > build-sim.log 2>&1
-          ec=$?
-          echo "=== xcodebuild exit=$ec ==="
-          echo "=== last 150 lines of build-sim.log ==="
-          tail -150 build-sim.log
-          exit $ec
+          {
+            echo "=== xcodebuild exit=$? ==="
+            if [ -f ci-logs/sim-5-build.log ]; then
+              echo "=== build log size ==="
+              wc -c ci-logs/sim-5-build.log
+              echo "=== last 100 lines ==="
+              tail -100 ci-logs/sim-5-build.log
+            else
+              echo "NO BUILD LOG FILE"
+            fi
+          } > ci-logs/sim-6-report.log 2>&1
+          cat ci-logs/sim-6-report.log
 
       - name: Verify .app exists
         run: |
           APP="build/Build/Products/Debug-iphonesimulator/iospro.app"
-          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; exit 1; fi
-          ls -la "$APP"
+          {
+            if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; ls -la build/Build/Products/ 2>&1; exit 1; fi
+            ls -la "$APP"
+          } > ci-logs/sim-7-verify.log 2>&1
+          ec=$?
+          cat ci-logs/sim-7-verify.log
+          exit $ec
 
       - name: Upload simulator artifact
         uses: actions/upload-artifact@v4
@@ -72,55 +121,49 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      - name: Push build log to debug branch
+      - name: Push logs to debug branch
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B ci-debug
-          mkdir -p ci-logs
-          cp build-sim.log "ci-logs/build-sim-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log" 2>/dev/null || echo "no build-sim.log" > "ci-logs/build-sim-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log"
           git add -f ci-logs/
-          git commit -m "ci-debug: build-sim log from run ${GITHUB_RUN_NUMBER}" || true
+          git status --short
+          git commit -m "ci-debug: sim logs from run ${GITHUB_RUN_NUMBER}" || true
           git push origin ci-debug --force 2>&1
-          echo "=== Pushed to ci-debug branch ==="
+          echo "=== Done ==="
 
   build-device-unsigned:
     name: Device (unsigned, for AltStore)
     runs-on: macos-14
     timeout-minutes: 30
+    needs: build-simulator
     steps:
       - uses: actions/checkout@v4
-      - name: Show toolchain
-        run: |
-          xcode-select -p
-          xcodebuild -version
+
+      - name: Setup debug log dir
+        run: mkdir -p ci-logs
+
       - name: Install XcodeGen
-        run: brew install xcodegen
+        run: brew install xcodegen > ci-logs/dev-1-xcodegen.log 2>&1
+
       - name: Generate Xcode project
-        run: xcodegen generate
+        run: xcodegen generate > ci-logs/dev-2-generate.log 2>&1
 
       - name: Build (iOS Device, unsigned)
+        run: xcodebuild -project iospro.xcodeproj -scheme iospro -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER="" DEVELOPMENT_TEAM="" build > ci-logs/dev-3-build.log 2>&1
+
+      - name: Report build status
+        if: always()
         run: |
-          set -o pipefail
-          xcodebuild \
-            -project iospro.xcodeproj \
-            -scheme iospro \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="" \
-            DEVELOPMENT_TEAM="" \
-            build > build-dev.log 2>&1
-          ec=$?
-          echo "=== xcodebuild exit=$ec ==="
-          echo "=== last 150 lines of build-dev.log ==="
-          tail -150 build-dev.log
-          exit $ec
+          echo "exit=$?"
+          if [ -f ci-logs/dev-3-build.log ]; then
+            wc -c ci-logs/dev-3-build.log
+            tail -100 ci-logs/dev-3-build.log
+          else
+            echo "NO BUILD LOG FILE"
+          fi > ci-logs/dev-4-report.log 2>&1
+          cat ci-logs/dev-4-report.log
 
       - name: Package as .ipa
         run: |
@@ -129,25 +172,22 @@ jobs:
           mkdir -p dist/Payload
           cp -R "$APP" dist/Payload/iospro.app
           cd dist && zip -r ../iospro-device-unsigned.ipa Payload && cd ..
-          ls -la iospro-device-unsigned.ipa
 
       - name: Upload device artifact
         uses: actions/upload-artifact@v4
         with:
           name: iospro-device-unsigned
           path: iospro-device-unsigned.ipa
-          retention-days: 14
-          if-no-files-found: error
+        retention-days: 14
+        if-no-files-found: error
 
-      - name: Push build log to debug branch
+      - name: Push logs to debug branch
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B ci-debug
-          mkdir -p ci-logs
-          cp build-dev.log "ci-logs/build-dev-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log" 2>/dev/null || echo "no build-dev.log" > "ci-logs/build-dev-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log"
           git add -f ci-logs/
-          git commit -m "ci-debug: build-dev log from run ${GITHUB_RUN_NUMBER}" || true
+          git status --short
+          git commit -m "ci-debug: dev logs from run ${GITHUB_RUN_NUMBER}" || true
           git push origin ci-debug --force 2>&1
-          echo "=== Pushed to ci-debug branch ==="
