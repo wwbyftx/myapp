@@ -80,7 +80,7 @@ jobs:
           git checkout -B ci-debug
           mkdir -p ci-logs
           cp build-sim.log "ci-logs/build-sim-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log" 2>/dev/null || echo "no build-sim.log" > "ci-logs/build-sim-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log"
-          git add ci-logs/
+          git add -f ci-logs/
           git commit -m "ci-debug: build-sim log from run ${GITHUB_RUN_NUMBER}" || true
           git push origin ci-debug --force 2>&1
           echo "=== Pushed to ci-debug branch ==="
@@ -147,7 +147,7 @@ jobs:
           git checkout -B ci-debug
           mkdir -p ci-logs
           cp build-dev.log "ci-logs/build-dev-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log" 2>/dev/null || echo "no build-dev.log" > "ci-logs/build-dev-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log"
-          git add ci-logs/
+          git add -f ci-logs/
           git commit -m "ci-debug: build-dev log from run ${GITHUB_RUN_NUMBER}" || true
           git push origin ci-debug --force 2>&1
           echo "=== Pushed to ci-debug branch ==="
