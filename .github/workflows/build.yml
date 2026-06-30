@@ -68,7 +68,7 @@ jobs:
             # Force objectVersion=70 (Xcode 15 format) - XcodeGen 2.45+ defaults to 77 (Xcode 16)
             echo "=== before sed, objectVersion ==="
             grep "objectVersion" iospro.xcodeproj/project.pbxproj || echo "no objectVersion found"
-            sed -i.bak 's/objectVersion = [0-9]*/objectVersion = 70/' iospro.xcodeproj/project.pbxproj
+            sed -i.bak 's/objectVersion = [0-9]*/objectVersion = 46/' iospro.xcodeproj/project.pbxproj
             echo "=== after sed, objectVersion ==="
             grep "objectVersion" iospro.xcodeproj/project.pbxproj
             echo "=== pbxproj first 30 lines ==="
@@ -172,7 +172,7 @@ jobs:
             xcodegen generate
             echo "=== before sed, objectVersion ===" >> ci-logs/dev-2-generate.log
             grep "objectVersion" iospro.xcodeproj/project.pbxproj >> ci-logs/dev-2-generate.log
-            sed -i.bak 's/objectVersion = [0-9]*/objectVersion = 70/' iospro.xcodeproj/project.pbxproj
+            sed -i.bak 's/objectVersion = [0-9]*/objectVersion = 46/' iospro.xcodeproj/project.pbxproj
             echo "=== after sed, objectVersion ===" >> ci-logs/dev-2-generate.log
             grep "objectVersion" iospro.xcodeproj/project.pbxproj >> ci-logs/dev-2-generate.log
             cp iospro.xcodeproj/project.pbxproj ci-logs/dev-pbxproj.pbxproj
