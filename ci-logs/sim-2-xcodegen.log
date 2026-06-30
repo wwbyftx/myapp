@@ -1,0 +1,12 @@
+✔︎ JSON API formula_tap_migrations.jws.json
+✔︎ JSON API cask_tap_migrations.jws.json
+::warning::The following taps are not trusted:%0A  aws/tap%0A  azure/bicep%0A%0AHomebrew will ignore formulae, casks and commands from these taps when `HOMEBREW_REQUIRE_TAP_TRUST` is set.%0AThis will become the default in Homebrew 6.0.0 or 5.2.0, whichever comes first.%0AEnable trust checks now with:%0A  export HOMEBREW_REQUIRE_TAP_TRUST=1%0ATrust specific formulae, casks or commands with:%0A  brew trust --formula <user>/<tap>/<formula>%0A  brew trust --cask <user>/<tap>/<cask>%0A  brew trust --command <user>/<tap>/<command>%0Aor trust installed formulae from these taps with:%0A  brew trust --formula azure/bicep/bicep%0AYou can trust all formulae, casks and commands from these taps with:%0A  brew trust aws/tap azure/bicep%0APrefer trusting only the specific formulae, casks or commands you need.%0AUntap them with:%0A  brew untap aws/tap azure/bicep%0ATo keep allowing them by default during the transition:%0A  export HOMEBREW_NO_REQUIRE_TAP_TRUST=1%0AThis is not recommended and will be removed in a later release.%0A
+Inspect the formula dependency plan before installing with `brew install --ask`.
+Enable ask mode by setting `HOMEBREW_ASK=1`.
+Hide these hints with `HOMEBREW_NO_ENV_HINTS=1` (see `man brew`).
+[32m==>[0m [1mFetching downloads for: [32mxcodegen[39m[0m
+✔︎ Bottle Manifest xcodegen (2.45.4)
+✔︎ Bottle xcodegen (2.45.4)
+[34m==>[0m [1mPouring xcodegen--2.45.4.arm64_sonoma.bottle.tar.gz[0m
+🍺  /opt/homebrew/Cellar/xcodegen/2.45.4: 38 files, 7.6MB
+Version: 2.45.4
