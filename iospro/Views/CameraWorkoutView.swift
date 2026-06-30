@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct CameraWorkoutView: View {
     let exercise: ExerciseKind
     @Environment(\.dismiss) private var dismiss
@@ -146,6 +147,7 @@ struct CameraWorkoutView: View {
     }
 }
 
+@MainActor
 private struct StatTile: View {
     let title: String
     let value: String
@@ -169,6 +171,7 @@ private struct StatTile: View {
     }
 }
 
+@MainActor
 private struct WorkoutSummarySheet: View {
     @Bindable var viewModel: WorkoutViewModel
     @Environment(\.dismiss) private var dismiss
@@ -264,6 +267,7 @@ private struct WorkoutSummarySheet: View {
     }
 }
 
+@MainActor
 private struct SummaryStat: View {
     let title: String
     let value: String

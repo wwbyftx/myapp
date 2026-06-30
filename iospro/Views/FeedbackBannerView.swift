@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// 顶部或底部的反馈条。
+@MainActor
 struct FeedbackBannerView: View {
     let feedback: FormFeedback
 

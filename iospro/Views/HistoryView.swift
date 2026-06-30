@@ -1,6 +1,7 @@
 import SwiftData
 import SwiftUI
 
+@MainActor
 struct HistoryView: View {
     @State private var viewModel = HistoryViewModel()
 
@@ -32,6 +33,7 @@ struct HistoryView: View {
     }
 }
 
+@MainActor
 private struct SessionRow: View {
     let session: WorkoutSession
 

@@ -29,7 +29,7 @@ enum BodyJoint: String, Codable, CaseIterable, Hashable {
         case .leftHip: self = .leftHip
         case .leftKnee: self = .leftKnee
         case .leftAnkle: self = .leftAnkle
-        @unknown default: self = .root
+        default: self = .root
         }
     }
 

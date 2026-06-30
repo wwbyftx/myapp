@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// 在摄像头画面上叠加姿态骨架。
+@MainActor
 struct PoseOverlayView: View {
 
     let frame: PoseFrame?
@@ -18,57 +19,57 @@ struct PoseOverlayView: View {
 
     // MARK: - 投影
 
+    /// 把 2D 关节坐标归一化并映射到视图尺寸。
+    /// 输入是像素坐标（Vision 2D），需要按包围盒缩放到视图内。
     private func projected(frame: PoseFrame, into size: CGSize) -> [BodyJoint: CGPoint] {
-        // 2D 坐标原点在左下；3D 坐标是相对躯干的米制坐标。
-        // 这里统一把关节投影到一个归一化空间，再映射到视图尺寸。
-        // 对于 3D，使用简化正交投影（忽略 z，y 向上）。
         var result: [BodyJoint: CGPoint] = [:]
+        guard !frame.joints.isEmpty else { return result }
 
-        if frame.is3D {
-            // 估算包围盒
-            var minX: Float = .greatestFiniteMagnitude
-            var maxX: Float = -.greatestFiniteMagnitude
-            var minY: Float = .greatestFiniteMagnitude
-            var maxY: Float = -.greatestFiniteMagnitude
-            for (_, p) in frame.joints {
-                minX = min(minX, p.position.x)
-                maxX = max(maxX, p.position.x)
-                minY = min(minY, p.position.y)
-                maxY = max(maxY, p.position.y)
-            }
-            let rangeX = max(maxX - minX, 0.001)
-            let rangeY = max(maxY - minY, 0.001)
-            let scale = min(size.width / CGFloat(rangeX), size.height / CGFloat(rangeY)) * 0.7
-            let centerX = (minX + maxX) / 2
-            let centerY = (minY + maxY) / 2
-            for (joint, p) in frame.joints {
-                let nx = (p.position.x - centerX) * scale + Float(size.width) / 2
-                // y 翻转（Vision 3D 中 y 向上，屏幕 y 向下）
-                let ny = Float(size.height) / 2 - (p.position.y - centerY) * scale
-                result[joint] = CGPoint(x: CGFloat(nx), y: CGFloat(ny))
-            }
-        } else {
-            // 2D：直接归一化
-            var minX: Float = .greatestFiniteMagnitude
-            var maxX: Float = -.greatestFiniteMagnitude
-            var minY: Float = .greatestFiniteMagnitude
-            var maxY: Float = -.greatestFiniteMagnitude
-            for (_, p) in frame.joints {
-                minX = min(minX, p.position.x)
-                maxX = max(maxX, p.position.x)
-                minY = min(minY, p.position.y)
-                maxY = max(maxY, p.position.y)
-            }
-            let rangeX = max(maxX - minX, 0.001)
-            let rangeY = max(maxY - minY, 0.001)
-            let scale = min(size.width / CGFloat(rangeX), size.height / CGFloat(rangeY)) * 0.7
-            let centerX = (minX + maxX) / 2
-            let centerY = (minY + maxY) / 2
-            for (joint, p) in frame.joints {
-                let nx = (p.position.x - centerX) * scale + Float(size.width) / 2
-                let ny = Float(size.height) / 2 - (p.position.y - centerY) * scale
-                result[joint] = CGPoint(x: CGFloat(nx), y: CGFloat(ny))
-            }
+        // 计算包围盒。
+        var minX: Float = .greatestFiniteMagnitude
+        var maxX: Float = -.greatestFiniteMagnitude
+        var minY: Float = .greatestFiniteMagnitude
+        var maxY: Float = -.greatestFiniteMagnitude
+        for (_, p) in frame.joints {
+            let px: Float = p.position.x
+            let py: Float = p.position.y
+            if px < minX { minX = px }
+            if px > maxX { maxX = px }
+            if py < minY { minY = py }
+            if py > maxY { maxY = py }
+        }
+
+        // 避免除零。
+        var rangeX: Float = maxX - minX
+        var rangeY: Float = maxY - minY
+        if rangeX < 0.001 { rangeX = 0.001 }
+        if rangeY < 0.001 { rangeY = 0.001 }
+
+        // 缩放比例，留 30% 边距。
+        let sizeW: CGFloat = size.width
+        let sizeH: CGFloat = size.height
+        let scaleX: CGFloat = sizeW / CGFloat(rangeX)
+        let scaleY: CGFloat = sizeH / CGFloat(rangeY)
+        let scale: CGFloat = (scaleX < scaleY ? scaleX : scaleY) * 0.7
+
+        // 视图中心。
+        let halfW: CGFloat = sizeW / 2
+        let halfH: CGFloat = sizeH / 2
+        // 包围盒中心。
+        let centerX: Float = (minX + maxX) / 2
+        let centerY: Float = (minY + maxY) / 2
+        // 把 scale 降为 Float 参与算术。
+        let scaleF: Float = Float(scale)
+
+        for (joint, p) in frame.joints {
+            let dx: Float = p.position.x - centerX
+            let dy: Float = p.position.y - centerY
+            let scaledX: Float = dx * scaleF
+            let scaledY: Float = dy * scaleF
+            // y 翻转：Vision 2D 坐标原点在左下，屏幕坐标原点在左上。
+            let nx: CGFloat = CGFloat(scaledX) + halfW
+            let ny: CGFloat = halfH - CGFloat(scaledY)
+            result[joint] = CGPoint(x: nx, y: ny)
         }
         return result
     }

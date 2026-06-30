@@ -3,6 +3,7 @@ import SwiftUI
 import UIKit
 
 /// 把 AVCaptureSession 桥接到 SwiftUI。
+@MainActor
 struct CameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
 

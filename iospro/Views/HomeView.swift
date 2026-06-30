@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct HomeView: View {
     @State private var path = NavigationPath()
 
@@ -79,6 +80,7 @@ struct HomeView: View {
     }
 }
 
+@MainActor
 private struct ExerciseRow: View {
     let exercise: ExerciseKind
     var body: some View {
