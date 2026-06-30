@@ -1,3 +1,4 @@
+=== installing xcodegen ===
 ✔︎ JSON API formula_tap_migrations.jws.json
 ✔︎ JSON API cask_tap_migrations.jws.json
 ::warning::The following taps are not trusted:%0A  aws/tap%0A  azure/bicep%0A%0AHomebrew will ignore formulae, casks and commands from these taps when `HOMEBREW_REQUIRE_TAP_TRUST` is set.%0AThis will become the default in Homebrew 6.0.0 or 5.2.0, whichever comes first.%0AEnable trust checks now with:%0A  export HOMEBREW_REQUIRE_TAP_TRUST=1%0ATrust specific formulae, casks or commands with:%0A  brew trust --formula <user>/<tap>/<formula>%0A  brew trust --cask <user>/<tap>/<cask>%0A  brew trust --command <user>/<tap>/<command>%0Aor trust installed formulae from these taps with:%0A  brew trust --formula azure/bicep/bicep%0AYou can trust all formulae, casks and commands from these taps with:%0A  brew trust aws/tap azure/bicep%0APrefer trusting only the specific formulae, casks or commands you need.%0AUntap them with:%0A  brew untap aws/tap azure/bicep%0ATo keep allowing them by default during the transition:%0A  export HOMEBREW_NO_REQUIRE_TAP_TRUST=1%0AThis is not recommended and will be removed in a later release.%0A
@@ -10,3 +11,44 @@ Hide these hints with `HOMEBREW_NO_ENV_HINTS=1` (see `man brew`).
 [34m==>[0m [1mPouring xcodegen--2.45.4.arm64_sonoma.bottle.tar.gz[0m
 🍺  /opt/homebrew/Cellar/xcodegen/2.45.4: 38 files, 7.6MB
 Version: 2.45.4
+=== generating ===
+⚙️  Generating plists...
+⚙️  Generating project...
+⚙️  Writing project...
+Created project at /Users/runner/work/myapp/myapp/iospro.xcodeproj
+=== before sed, objectVersion ===
+	objectVersion = 77;
+=== after sed, objectVersion ===
+	objectVersion = 70;
+=== pbxproj first 30 lines ===
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 70;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0097CCD53B591080AF87A224 /* PoseDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B35A373864D87024989C31B /* PoseDetectionService.swift */; };
+		1EF81E6CC23E246520F1E9CF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E08D3DA8B8420939FAFBEAE /* ContentView.swift */; };
+		25EE7AC3BFF7D28DDED19C57 /* CameraWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 690DC3C132EDAC6677E0BE0B /* CameraWorkoutView.swift */; };
+		3E7150127D517B1151B73C91 /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EE03F4CE0BE5F3A13E514D6 /* CameraService.swift */; };
+		44CBC5F839C096FBA27FCF28 /* WorkoutStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 960BBB83F1110641F38B80F1 /* WorkoutStore.swift */; };
+		4DC252FA10FCDC53D1B4644A /* WorkoutSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1838F74AA8112BB2B84AD2C /* WorkoutSession.swift */; };
+		509A0170FF1D04AB70F9B9D3 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9D6F70847687B741A3E1B40 /* FeedbackService.swift */; };
+		58803AF84A87506781E78AA4 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 466DF664D4C2F6D501B7F9DD /* CoreImage.framework */; };
+		5EF2EBCD3B16662E131D101B /* CameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1484C08FBE099DE40DF74E6 /* CameraPreview.swift */; };
+		64A383B35C5C00909688076A /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 98FB1E9DC097E98CDFA15C27 /* AVFoundation.framework */; };
+		64F5700065E6AEF5DA395684 /* PoseOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DFAAFE2B548207198200F25 /* PoseOverlayView.swift */; };
+		823ECB2A7B15C8488BA78AAE /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEC2678295ED7B7DF337DA73 /* AIService.swift */; };
+		913F1FFCA8A48D5EBB2CE5E1 /* HistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A9AFC0EB4EC7D7CC8AC6C0F /* HistoryViewModel.swift */; };
+		959D94785E7B3CB98CF126B0 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96221BC7152D77C7A262FD6D /* Feedback.swift */; };
+		972A311FC211AD25B1B13DA5 /* WorkoutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08B33D4DD27E68917A1727A /* WorkoutViewModel.swift */; };
+		9CD514C3AB4705CB04F27E4C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226199E46080054A1EA72489 /* SettingsView.swift */; };
+		A3B3EC953AB25FD13960DEEB /* FormAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BCCBCCB2DDD7E9CB784DC1A /* FormAnalyzer.swift */; };
+		BB5C493A530A385507EA4711 /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BA530773407C44C64DD1A30D /* Vision.framework */; };
+		C262ACC704DF8038AB158754 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C254E6BF0661B9D9EB157DCD /* Assets.xcassets */; };
+		D208B048B979E5256849036C /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AFB91678CD688557AAD1EAF /* HistoryView.swift */; };
+		D6646D3C9DF935E0778380AA /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00E2954E887D6684EF408B98 /* Exercise.swift */; };
+=== saving pbxproj ===

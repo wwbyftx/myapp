@@ -1,0 +1,11 @@
+Command line invocation:
+    /Applications/Xcode_15.4.app/Contents/Developer/usr/bin/xcodebuild -list -project iospro.xcodeproj
+
+User defaults from command line:
+    IDEPackageSupportUseBuiltinSCM = YES
+
+2026-06-30 13:30:59.288 xcodebuild[54052:129661] Writing error result bundle to /var/folders/dq/2t71w9pd3jx50vh3kp15_dt40000gn/T/ResultBundle_2026-30-06_13-30-0059.xcresult
+xcodebuild: error: Unable to read project 'iospro.xcodeproj'.
+	Reason: The project ‘iospro’ cannot be opened because it is in a future Xcode project file format (70). Adjust the project format using a compatible version of Xcode to allow it to be opened by this version of Xcode.
+
+

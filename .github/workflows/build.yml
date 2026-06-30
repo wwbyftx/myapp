@@ -39,9 +39,30 @@ jobs:
       - name: Install XcodeGen
         run: |
           {
-            echo "=== installing xcodegen ==="
+            echo "=== installing xcodegen (downgrade to 2.42.0 if needed) ==="
             HOMEBREW_NO_AUTO_UPDATE=1 brew install xcodegen 2>&1 || echo "brew install failed"
-            xcodegen --version
+            XG_VERSION=$(xcodegen --version 2>&1 || echo "none")
+            echo "Installed XcodeGen version: $XG_VERSION"
+            # XcodeGen 2.43+ generates objectVersion=77 (Xcode 16) which 15.4 can't read
+            if [[ "$XG_VERSION" == 2.4[3-9]* || "$XG_VERSION" == 2.5* || "$XG_VERSION" == 3.* ]]; then
+              echo "Downgrading to XcodeGen 2.42.0..."
+              XG_TMP=$(mktemp -d)
+              cd "$XG_TMP"
+              curl -sSL -o xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/download/2.42.0/xcodegen.zip
+              unzip -q xcodegen.zip
+              XG_FILE=$(find . -name "xcodegen" -type f -perm +111 | head -1)
+              if [ -n "$XG_FILE" ]; then
+                sudo cp "$XG_FILE" /usr/local/bin/xcodegen
+                sudo chmod +x /usr/local/bin/xcodegen
+                cd -
+                rm -rf "$XG_TMP"
+                xcodegen --version
+              else
+                cd -
+                echo "FAILED to find xcodegen binary in zip"
+                ls -la "$XG_TMP"
+              fi
+            fi
             echo "=== generating ==="
             xcodegen generate
             # Force objectVersion=70 (Xcode 15 format) - XcodeGen 2.45+ defaults to 77 (Xcode 16)
@@ -121,7 +142,30 @@ jobs:
       - name: Setup debug log dir
         run: mkdir -p ci-logs
       - name: Install XcodeGen
-        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install xcodegen > ci-logs/dev-1-xcodegen.log 2>&1
+        run: |
+          {
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install xcodegen 2>&1 || echo "brew install failed"
+            XG_VERSION=$(xcodegen --version 2>&1 || echo "none")
+            echo "Installed XcodeGen version: $XG_VERSION"
+            if [[ "$XG_VERSION" == 2.4[3-9]* || "$XG_VERSION" == 2.5* || "$XG_VERSION" == 3.* ]]; then
+              echo "Downgrading to XcodeGen 2.42.0..."
+              XG_TMP=$(mktemp -d)
+              cd "$XG_TMP"
+              curl -sSL -o xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/download/2.42.0/xcodegen.zip
+              unzip -q xcodegen.zip
+              XG_FILE=$(find . -name "xcodegen" -type f -perm +111 | head -1)
+              if [ -n "$XG_FILE" ]; then
+                sudo cp "$XG_FILE" /usr/local/bin/xcodegen
+                sudo chmod +x /usr/local/bin/xcodegen
+                cd -
+                rm -rf "$XG_TMP"
+              else
+                cd -
+                echo "FAILED to find xcodegen binary"
+              fi
+              xcodegen --version
+            fi
+          } > ci-logs/dev-1-xcodegen.log 2>&1
       - name: Generate Xcode project
         run: |
           {
