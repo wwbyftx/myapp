@@ -1,19 +1,20 @@
 === before generate ===
 total 40
-drwxr-xr-x  11 runner  staff   352 Jun 30 13:04 .
-drwxr-xr-x   3 runner  staff    96 Jun 30 13:04 ..
-drwxr-xr-x  14 runner  staff   448 Jun 30 13:04 .git
--rw-r--r--   1 runner  staff    94 Jun 30 13:04 .gitattributes
-drwxr-xr-x   3 runner  staff    96 Jun 30 13:04 .github
--rw-r--r--   1 runner  staff   399 Jun 30 13:04 .gitignore
--rw-r--r--   1 runner  staff  6367 Jun 30 13:04 README.md
-drwxr-xr-x   3 runner  staff    96 Jun 30 13:04 artifacts
-drwxr-xr-x   5 runner  staff   160 Jun 30 13:04 ci-logs
-drwxr-xr-x  10 runner  staff   320 Jun 30 13:04 iospro
--rw-r--r--   1 runner  staff  1992 Jun 30 13:04 project.yml
+drwxr-xr-x  11 runner  staff   352 Jun 30 13:17 .
+drwxr-xr-x   3 runner  staff    96 Jun 30 13:17 ..
+drwxr-xr-x  14 runner  staff   448 Jun 30 13:17 .git
+-rw-r--r--   1 runner  staff    94 Jun 30 13:17 .gitattributes
+drwxr-xr-x   3 runner  staff    96 Jun 30 13:17 .github
+-rw-r--r--   1 runner  staff   399 Jun 30 13:17 .gitignore
+-rw-r--r--   1 runner  staff  6367 Jun 30 13:17 README.md
+drwxr-xr-x   3 runner  staff    96 Jun 30 13:17 artifacts
+drwxr-xr-x   7 runner  staff   224 Jun 30 13:17 ci-logs
+drwxr-xr-x  10 runner  staff   320 Jun 30 13:17 iospro
+-rw-r--r--   1 runner  staff  2015 Jun 30 13:17 project.yml
 === project.yml ===
 name: iospro
 options:
+  xcodeVersion: "15.4"
   bundleIdPrefix: com.example
   deploymentTarget:
     iOS: "17.0"
@@ -77,22 +78,25 @@ targets:
 Created project at /Users/runner/work/myapp/myapp/iospro.xcodeproj
 === after generate ===
 total 40
-drwxr-xr-x  12 runner  staff   384 Jun 30 13:04 .
-drwxr-xr-x   3 runner  staff    96 Jun 30 13:04 ..
-drwxr-xr-x  14 runner  staff   448 Jun 30 13:04 .git
--rw-r--r--   1 runner  staff    94 Jun 30 13:04 .gitattributes
-drwxr-xr-x   3 runner  staff    96 Jun 30 13:04 .github
--rw-r--r--   1 runner  staff   399 Jun 30 13:04 .gitignore
--rw-r--r--   1 runner  staff  6367 Jun 30 13:04 README.md
-drwxr-xr-x   3 runner  staff    96 Jun 30 13:04 artifacts
-drwxr-xr-x   5 runner  staff   160 Jun 30 13:04 ci-logs
-drwxr-xr-x  10 runner  staff   320 Jun 30 13:04 iospro
-drwxr-xr-x   5 runner  staff   160 Jun 30 13:04 iospro.xcodeproj
--rw-r--r--   1 runner  staff  1992 Jun 30 13:04 project.yml
+drwxr-xr-x  12 runner  staff   384 Jun 30 13:17 .
+drwxr-xr-x   3 runner  staff    96 Jun 30 13:17 ..
+drwxr-xr-x  14 runner  staff   448 Jun 30 13:17 .git
+-rw-r--r--   1 runner  staff    94 Jun 30 13:17 .gitattributes
+drwxr-xr-x   3 runner  staff    96 Jun 30 13:17 .github
+-rw-r--r--   1 runner  staff   399 Jun 30 13:17 .gitignore
+-rw-r--r--   1 runner  staff  6367 Jun 30 13:17 README.md
+drwxr-xr-x   3 runner  staff    96 Jun 30 13:17 artifacts
+drwxr-xr-x   7 runner  staff   224 Jun 30 13:17 ci-logs
+drwxr-xr-x  10 runner  staff   320 Jun 30 13:17 iospro
+drwxr-xr-x   6 runner  staff   192 Jun 30 13:17 iospro.xcodeproj
+-rw-r--r--   1 runner  staff  2015 Jun 30 13:17 project.yml
 === xcodeproj check ===
-total 48
-drwxr-xr-x   5 runner  staff    160 Jun 30 13:04 .
-drwxr-xr-x  12 runner  staff    384 Jun 30 13:04 ..
--rw-r--r--   1 runner  staff  23288 Jun 30 13:04 project.pbxproj
-drwxr-xr-x   3 runner  staff     96 Jun 30 13:04 project.xcworkspace
-drwxr-xr-x   2 runner  staff     64 Jun 30 13:04 xcshareddata
+total 96
+drwxr-xr-x   6 runner  staff    192 Jun 30 13:17 .
+drwxr-xr-x  12 runner  staff    384 Jun 30 13:17 ..
+-rw-r--r--   1 runner  staff  23288 Jun 30 13:17 project.pbxproj
+-rw-r--r--   1 runner  staff  23288 Jun 30 13:17 project.pbxproj.bak
+drwxr-xr-x   3 runner  staff     96 Jun 30 13:17 project.xcworkspace
+drwxr-xr-x   2 runner  staff     64 Jun 30 13:17 xcshareddata
+=== pbxproj objectVersion ===
+	objectVersion = 70;

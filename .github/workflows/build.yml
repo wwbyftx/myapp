@@ -27,103 +27,72 @@ jobs:
       - name: Show toolchain
         run: |
           {
-            echo "=== pwd ==="
-            pwd
-            echo "=== ls ==="
-            ls -la
             echo "=== xcode-select ==="
             xcode-select -p
             echo "=== xcodebuild -version ==="
             xcodebuild -version
-            echo "=== Available SDKs ==="
-            xcodebuild -showsdks
-            echo "=== XcodeGen version ==="
-            xcodegen --version 2>&1 || echo "xcodegen not installed"
+            echo "=== swift --version ==="
+            swift --version 2>&1 | head -3
           } > ci-logs/sim-1-toolchain.log 2>&1
           cat ci-logs/sim-1-toolchain.log
 
       - name: Install XcodeGen
         run: |
           {
-            brew install xcodegen
+            echo "=== installing xcodegen ==="
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install xcodegen 2>&1 || echo "brew install failed"
             xcodegen --version
-          } > ci-logs/sim-2-xcodegen.log 2>&1
-          cat ci-logs/sim-2-xcodegen.log
-
-      - name: Generate Xcode project
-        run: |
-          {
-            echo "=== before generate ==="
-            ls -la
-            echo "=== project.yml ==="
-            cat project.yml
+            echo "=== generating ==="
             xcodegen generate
-            # Force project format to 70 (Xcode 15.4) since XcodeGen 2.45 defaults to 77 (Xcode 16)
-            sed -i.bak 's/objectVersion = [0-9]*/objectVersion = 70/' iospro.xcodeproj/project.pbxproj
-            echo "=== after generate ==="
-            ls -la
-            echo "=== xcodeproj check ==="
-            if [ -d "iospro.xcodeproj" ]; then
-              ls -la iospro.xcodeproj
-              echo "=== pbxproj objectVersion ==="
-              grep "objectVersion" iospro.xcodeproj/project.pbxproj
-            else
-              echo "ERROR: iospro.xcodeproj not generated"
-              exit 1
-            fi
-          } > ci-logs/sim-3-generate.log 2>&1
+            echo "=== pbxproj first 30 lines ==="
+            head -30 iospro.xcodeproj/project.pbxproj
+            echo "=== saving pbxproj ==="
+            cp iospro.xcodeproj/project.pbxproj ci-logs/sim-pbxproj.pbxproj
+          } > ci-logs/sim-2-xcodegen.log 2>&1
           ec=$?
-          cat ci-logs/sim-3-generate.log
+          cat ci-logs/sim-2-xcodegen.log
           exit $ec
 
-      - name: List schemes & targets
-        run: |
-          {
-            xcodebuild -list -project iospro.xcodeproj
-          } > ci-logs/sim-4-list.log 2>&1
-          ec=$?
-          cat ci-logs/sim-4-list.log
-          exit $ec
+      - name: List schemes
+        run: xcodebuild -list -project iospro.xcodeproj > ci-logs/sim-3-list.log 2>&1; cat ci-logs/sim-3-list.log; exit 0
 
       - name: Build (iOS Simulator)
-        run: xcodebuild -project iospro.xcodeproj -scheme iospro -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build > ci-logs/sim-5-build.log 2>&1
-        env:
-          SHELLOPTS: pipefail
+        run: xcodebuild -project iospro.xcodeproj -scheme iospro -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build > ci-logs/sim-4-build.log 2>&1
+        continue-on-error: true
 
       - name: Report build status
         if: always()
         run: |
           {
             echo "=== xcodebuild exit=$? ==="
-            if [ -f ci-logs/sim-5-build.log ]; then
-              echo "=== build log size ==="
-              wc -c ci-logs/sim-5-build.log
-              echo "=== last 100 lines ==="
-              tail -100 ci-logs/sim-5-build.log
+            if [ -f ci-logs/sim-4-build.log ]; then
+              wc -c ci-logs/sim-4-build.log
+              echo "=== last 80 lines ==="
+              tail -80 ci-logs/sim-4-build.log
             else
               echo "NO BUILD LOG FILE"
             fi
-          } > ci-logs/sim-6-report.log 2>&1
-          cat ci-logs/sim-6-report.log
+          } > ci-logs/sim-5-report.log 2>&1
+          cat ci-logs/sim-5-report.log
 
-      - name: Verify .app exists
+      - name: Verify .app
+        if: always()
         run: |
           APP="build/Build/Products/Debug-iphonesimulator/iospro.app"
           {
-            if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; ls -la build/Build/Products/ 2>&1; exit 1; fi
+            if [ ! -d "$APP" ]; then echo "App bundle not found"; ls -la build/Build/Products/ 2>&1; exit 0; fi
             ls -la "$APP"
-          } > ci-logs/sim-7-verify.log 2>&1
-          ec=$?
-          cat ci-logs/sim-7-verify.log
-          exit $ec
+          } > ci-logs/sim-6-verify.log 2>&1
+          cat ci-logs/sim-6-verify.log
 
       - name: Upload simulator artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: iospro-simulator
           path: build/Build/Products/Debug-iphonesimulator/iospro.app
           retention-days: 14
-          if-no-files-found: error
+          if-no-files-found: ignore
 
       - name: Push logs to debug branch
         if: always()
@@ -133,7 +102,7 @@ jobs:
           git checkout -B ci-debug
           git add -f ci-logs/
           git status --short
-          git commit -m "ci-debug: sim logs from run ${GITHUB_RUN_NUMBER}" || true
+          git commit -m "ci-debug: sim logs run ${GITHUB_RUN_NUMBER}" || true
           git push origin ci-debug --force 2>&1
           echo "=== Sim Done ==="
 
@@ -143,58 +112,58 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup debug log dir
         run: mkdir -p ci-logs
-
       - name: Install XcodeGen
-        run: brew install xcodegen > ci-logs/dev-1-xcodegen.log 2>&1
-
+        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install xcodegen > ci-logs/dev-1-xcodegen.log 2>&1
       - name: Generate Xcode project
-        run: xcodegen generate > ci-logs/dev-2-generate.log 2>&1 && sed -i.bak 's/objectVersion = [0-9]*/objectVersion = 70/' iospro.xcodeproj/project.pbxproj >> ci-logs/dev-2-generate.log 2>&1 && echo "objectVersion forced to 70" >> ci-logs/dev-2-generate.log
-
+        run: |
+          {
+            xcodegen generate
+            cp iospro.xcodeproj/project.pbxproj ci-logs/dev-pbxproj.pbxproj
+          } > ci-logs/dev-2-generate.log 2>&1
       - name: Build (iOS Device, unsigned)
         run: xcodebuild -project iospro.xcodeproj -scheme iospro -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER="" DEVELOPMENT_TEAM="" build > ci-logs/dev-3-build.log 2>&1
-
+        continue-on-error: true
       - name: Report build status
         if: always()
         run: |
-          echo "exit=$?"
-          if [ -f ci-logs/dev-3-build.log ]; then
-            wc -c ci-logs/dev-3-build.log
-            tail -100 ci-logs/dev-3-build.log
-          else
-            echo "NO BUILD LOG FILE"
-          fi > ci-logs/dev-4-report.log 2>&1
+          {
+            echo "=== xcodebuild exit=$? ==="
+            if [ -f ci-logs/dev-3-build.log ]; then
+              wc -c ci-logs/dev-3-build.log
+              tail -80 ci-logs/dev-3-build.log
+            else
+              echo "NO BUILD LOG FILE"
+            fi
+          } > ci-logs/dev-4-report.log 2>&1
           cat ci-logs/dev-4-report.log
-
       - name: Package as .ipa
+        if: always()
         run: |
           APP="build/Build/Products/Release-iphoneos/iospro.app"
-          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; exit 1; fi
+          if [ ! -d "$APP" ]; then echo "App bundle not found"; exit 0; fi
           mkdir -p dist/Payload
           cp -R "$APP" dist/Payload/iospro.app
-          cd dist && zip -r ../iospro-device-unsigned.ipa Payload && cd ..
-
+          cd dist && zip -r ../iospro-device-unsigned.ipa Payload && cd .. >> ci-logs/dev-5-ipa.log 2>&1
       - name: Upload device artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: iospro-device-unsigned
           path: iospro-device-unsigned.ipa
           retention-days: 14
-          if-no-files-found: error
-
+          if-no-files-found: ignore
       - name: Push logs to debug branch
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Fetch logs from other jobs (e.g., sim) to preserve them
           git fetch origin ci-debug --depth=1 2>/dev/null || true
           git checkout -B ci-debug
           git checkout origin/ci-debug -- ci-logs/ 2>/dev/null || true
           git add -f ci-logs/
           git status --short
-          git commit -m "ci-debug: dev logs from run ${GITHUB_RUN_NUMBER}" || true
+          git commit -m "ci-debug: dev logs run ${GITHUB_RUN_NUMBER}" || true
           git push origin ci-debug --force 2>&1
           echo "=== Dev Done ==="

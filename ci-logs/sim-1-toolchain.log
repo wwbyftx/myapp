@@ -2,17 +2,17 @@
 /Users/runner/work/myapp/myapp
 === ls ===
 total 40
-drwxr-xr-x  11 runner  staff   352 Jun 30 13:04 .
-drwxr-xr-x   3 runner  staff    96 Jun 30 13:04 ..
-drwxr-xr-x  14 runner  staff   448 Jun 30 13:04 .git
--rw-r--r--   1 runner  staff    94 Jun 30 13:04 .gitattributes
-drwxr-xr-x   3 runner  staff    96 Jun 30 13:04 .github
--rw-r--r--   1 runner  staff   399 Jun 30 13:04 .gitignore
--rw-r--r--   1 runner  staff  6367 Jun 30 13:04 README.md
-drwxr-xr-x   3 runner  staff    96 Jun 30 13:04 artifacts
-drwxr-xr-x   3 runner  staff    96 Jun 30 13:04 ci-logs
-drwxr-xr-x  10 runner  staff   320 Jun 30 13:04 iospro
--rw-r--r--   1 runner  staff  1992 Jun 30 13:04 project.yml
+drwxr-xr-x  11 runner  staff   352 Jun 30 13:17 .
+drwxr-xr-x   3 runner  staff    96 Jun 30 13:17 ..
+drwxr-xr-x  14 runner  staff   448 Jun 30 13:17 .git
+-rw-r--r--   1 runner  staff    94 Jun 30 13:17 .gitattributes
+drwxr-xr-x   3 runner  staff    96 Jun 30 13:17 .github
+-rw-r--r--   1 runner  staff   399 Jun 30 13:17 .gitignore
+-rw-r--r--   1 runner  staff  6367 Jun 30 13:17 README.md
+drwxr-xr-x   3 runner  staff    96 Jun 30 13:17 artifacts
+drwxr-xr-x   7 runner  staff   224 Jun 30 13:17 ci-logs
+drwxr-xr-x  10 runner  staff   320 Jun 30 13:17 iospro
+-rw-r--r--   1 runner  staff  2015 Jun 30 13:17 project.yml
 === xcode-select ===
 /Applications/Xcode_15.4.app/Contents/Developer
 === xcodebuild -version ===
@@ -51,5 +51,5 @@ watchOS Simulator SDKs:
 	Simulator - watchOS 10.5      	-sdk watchsimulator10.5
 
 === XcodeGen version ===
-/Users/runner/work/_temp/a30fa576-d6ed-4ad9-afa1-2e7627927428.sh: line 13: xcodegen: command not found
+/Users/runner/work/_temp/fb8300d9-03ac-41c5-81a8-ee99dcb0237b.sh: line 13: xcodegen: command not found
 xcodegen not installed
