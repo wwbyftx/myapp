@@ -137,7 +137,6 @@ jobs:
     name: Device (unsigned, for AltStore)
     runs-on: macos-14
     timeout-minutes: 30
-    needs: build-simulator
     steps:
       - uses: actions/checkout@v4
 
@@ -178,8 +177,8 @@ jobs:
         with:
           name: iospro-device-unsigned
           path: iospro-device-unsigned.ipa
-        retention-days: 14
-        if-no-files-found: error
+          retention-days: 14
+          if-no-files-found: error
 
       - name: Push logs to debug branch
         if: always()
