@@ -22,7 +22,6 @@ jobs:
         run: |
           echo "=== xcode-select ==="; xcode-select -p
           echo "=== xcodebuild -version ==="; xcodebuild -version
-          echo "=== swift --version ==="; swift --version
           echo "=== Available SDKs ==="; xcodebuild -showsdks | head -40
 
       - name: Install XcodeGen
@@ -35,13 +34,9 @@ jobs:
         run: |
           echo "=== schemes ==="
           xcodebuild -list -project iospro.xcodeproj
-          echo ""
-          echo "=== pwd ==="
-          pwd
-          echo "=== ls iospro.xcodeproj ==="
-          ls iospro.xcodeproj/
 
       - name: Build (iOS Simulator)
+        id: build
         run: |
           set -o pipefail
           xcodebuild \
@@ -56,10 +51,9 @@ jobs:
             build > build-sim.log 2>&1
           ec=$?
           echo "=== xcodebuild exit=$ec ==="
-          echo "=== last 100 lines of build-sim.log ==="
-          tail -100 build-sim.log
-          echo "=== first 50 lines (for context) ==="
-          head -50 build-sim.log
+          echo "=== last 120 lines of build-sim.log ==="
+          tail -120 build-sim.log
+          echo "exit=$ec" >> "$GITHUB_OUTPUT"
           exit $ec
 
       - name: Verify .app exists
@@ -75,6 +69,19 @@ jobs:
           path: build/Build/Products/Debug-iphonesimulator/iospro.app
           retention-days: 14
           if-no-files-found: error
+
+      - name: Push build log to debug branch on failure
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B ci-debug
+          mkdir -p ci-logs
+          cp build-sim.log "ci-logs/build-sim-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log"
+          git add ci-logs/
+          git commit -m "ci-debug: build-sim log from run ${GITHUB_RUN_NUMBER}" || true
+          git push origin ci-debug --force 2>&1
+          echo "=== Pushed to ci-debug branch ==="
 
   build-device-unsigned:
     name: Device (unsigned, for AltStore)
@@ -92,6 +99,7 @@ jobs:
         run: xcodegen generate
 
       - name: Build (iOS Device, unsigned)
+        id: build
         run: |
           set -o pipefail
           xcodebuild \
@@ -109,8 +117,8 @@ jobs:
             build > build-dev.log 2>&1
           ec=$?
           echo "=== xcodebuild exit=$ec ==="
-          echo "=== last 100 lines of build-dev.log ==="
-          tail -100 build-dev.log
+          echo "=== last 120 lines of build-dev.log ==="
+          tail -120 build-dev.log
           exit $ec
 
       - name: Package as .ipa
@@ -129,3 +137,16 @@ jobs:
           path: iospro-device-unsigned.ipa
           retention-days: 14
           if-no-files-found: error
+
+      - name: Push build log to debug branch on failure
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B ci-debug
+          mkdir -p ci-logs
+          cp build-dev.log "ci-logs/build-dev-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.log"
+          git add ci-logs/
+          git commit -m "ci-debug: build-dev log from run ${GITHUB_RUN_NUMBER}" || true
+          git push origin ci-debug --force 2>&1
+          echo "=== Pushed to ci-debug branch ==="
