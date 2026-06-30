@@ -18,14 +18,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
-
       - name: Show toolchain
         run: |
+          echo "=== Xcode versions available ==="
+          ls -d /Applications/Xcode*.app 2>/dev/null || ls /Applications/ | grep -i xcode
+          echo "=== Default Xcode ==="
+          xcode-select -p
           xcodebuild -version
+          echo "=== swift ==="
           swift --version
-          ls /Applications/ | grep -i xcode || true
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -45,7 +46,10 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build > build-sim.log 2>&1 || { echo "=== BUILD FAILED ==="; tail -150 build-sim.log; exit 1; }
+            build > build-sim.log 2>&1
+          echo "=== exit=$? ==="
+          echo "=== last 80 lines of build-sim.log ==="
+          tail -80 build-sim.log
 
       - name: Verify .app exists
         run: |
@@ -53,8 +57,6 @@ jobs:
           if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; ls -R build/Build/ 2>/dev/null || true; exit 1; fi
           echo "Bundle: $APP"
           ls -la "$APP"
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist"
-          /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" "$APP/Info.plist"
 
       - name: Upload simulator artifact
         uses: actions/upload-artifact@v4
@@ -64,15 +66,6 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      - name: Upload build log (always)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: iospro-simulator-build-log
-          path: build-sim.log
-          retention-days: 7
-          if-no-files-found: ignore
-
   build-device-unsigned:
     name: Device (unsigned, for AltStore)
     runs-on: macos-14
@@ -80,8 +73,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+      - name: Show toolchain
+        run: |
+          xcode-select -p
+          xcodebuild -version
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -104,7 +99,10 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             PROVISIONING_PROFILE_SPECIFIER="" \
             DEVELOPMENT_TEAM="" \
-            build > build-dev.log 2>&1 || { echo "=== BUILD FAILED ==="; tail -150 build-dev.log; exit 1; }
+            build > build-dev.log 2>&1
+          echo "=== exit=$? ==="
+          echo "=== last 80 lines of build-dev.log ==="
+          tail -80 build-dev.log
 
       - name: Package as .ipa
         run: |
@@ -124,12 +122,3 @@ jobs:
           path: iospro-device-unsigned.ipa
           retention-days: 14
           if-no-files-found: error
-
-      - name: Upload build log (always)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: iospro-device-build-log
-          path: build-dev.log
-          retention-days: 7
-          if-no-files-found: ignore
