@@ -6,20 +6,17 @@ on:
   pull_request:
   workflow_dispatch:
 
-# 同一 PR 后续 push 取消旧 build
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # 1. iOS 模拟器 .app —— 在 Xcode 里直接打开运行用
   build-simulator:
     name: Simulator (.app)
     runs-on: macos-14
     timeout-minutes: 30
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
@@ -28,6 +25,7 @@ jobs:
         run: |
           xcodebuild -version
           swift --version
+          ls /Applications/ | grep -i xcode || true
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -47,12 +45,12 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build 2>&1 | tail -200
+            build > build-sim.log 2>&1 || { echo "=== BUILD FAILED ==="; tail -150 build-sim.log; exit 1; }
 
       - name: Verify .app exists
         run: |
           APP="build/Build/Products/Debug-iphonesimulator/iospro.app"
-          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; exit 1; fi
+          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; ls -R build/Build/ 2>/dev/null || true; exit 1; fi
           echo "Bundle: $APP"
           ls -la "$APP"
           /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist"
@@ -66,14 +64,21 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-  # 2. 真机未签名 .app —— 用 AltStore / Sideloadly 自签后装到 iPad
+      - name: Upload build log (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iospro-simulator-build-log
+          path: build-sim.log
+          retention-days: 7
+          if-no-files-found: ignore
+
   build-device-unsigned:
     name: Device (unsigned, for AltStore)
     runs-on: macos-14
     timeout-minutes: 30
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
@@ -99,17 +104,14 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             PROVISIONING_PROFILE_SPECIFIER="" \
             DEVELOPMENT_TEAM="" \
-            build 2>&1 | tail -200
+            build > build-dev.log 2>&1 || { echo "=== BUILD FAILED ==="; tail -150 build-dev.log; exit 1; }
 
       - name: Package as .ipa
         run: |
           APP="build/Build/Products/Release-iphoneos/iospro.app"
-          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; exit 1; fi
-          mkdir -p payload
-          cp -R "$APP" payload/iospro.app
-          # 写一个最小的 Payload 目录结构
+          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; ls -R build/Build/ 2>/dev/null || true; exit 1; fi
           mkdir -p dist/Payload
-          mv payload/iospro.app dist/Payload/iospro.app
+          cp -R "$APP" dist/Payload/iospro.app
           cd dist
           zip -r ../iospro-device-unsigned.ipa Payload
           cd ..
@@ -122,3 +124,12 @@ jobs:
           path: iospro-device-unsigned.ipa
           retention-days: 14
           if-no-files-found: error
+
+      - name: Upload build log (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iospro-device-build-log
+          path: build-dev.log
+          retention-days: 7
+          if-no-files-found: ignore
