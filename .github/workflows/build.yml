@@ -20,19 +20,26 @@ jobs:
 
       - name: Show toolchain
         run: |
-          echo "=== Xcode versions available ==="
-          ls -d /Applications/Xcode*.app 2>/dev/null || ls /Applications/ | grep -i xcode
-          echo "=== Default Xcode ==="
-          xcode-select -p
-          xcodebuild -version
-          echo "=== swift ==="
-          swift --version
+          echo "=== xcode-select ==="; xcode-select -p
+          echo "=== xcodebuild -version ==="; xcodebuild -version
+          echo "=== swift --version ==="; swift --version
+          echo "=== Available SDKs ==="; xcodebuild -showsdks | head -40
 
       - name: Install XcodeGen
         run: brew install xcodegen
 
       - name: Generate Xcode project
         run: xcodegen generate
+
+      - name: List schemes & targets
+        run: |
+          echo "=== schemes ==="
+          xcodebuild -list -project iospro.xcodeproj
+          echo ""
+          echo "=== pwd ==="
+          pwd
+          echo "=== ls iospro.xcodeproj ==="
+          ls iospro.xcodeproj/
 
       - name: Build (iOS Simulator)
         run: |
@@ -47,15 +54,18 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             build > build-sim.log 2>&1
-          echo "=== exit=$? ==="
-          echo "=== last 80 lines of build-sim.log ==="
-          tail -80 build-sim.log
+          ec=$?
+          echo "=== xcodebuild exit=$ec ==="
+          echo "=== last 100 lines of build-sim.log ==="
+          tail -100 build-sim.log
+          echo "=== first 50 lines (for context) ==="
+          head -50 build-sim.log
+          exit $ec
 
       - name: Verify .app exists
         run: |
           APP="build/Build/Products/Debug-iphonesimulator/iospro.app"
-          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; ls -R build/Build/ 2>/dev/null || true; exit 1; fi
-          echo "Bundle: $APP"
+          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; exit 1; fi
           ls -la "$APP"
 
       - name: Upload simulator artifact
@@ -72,15 +82,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
       - name: Show toolchain
         run: |
           xcode-select -p
           xcodebuild -version
-
       - name: Install XcodeGen
         run: brew install xcodegen
-
       - name: Generate Xcode project
         run: xcodegen generate
 
@@ -100,19 +107,19 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="" \
             DEVELOPMENT_TEAM="" \
             build > build-dev.log 2>&1
-          echo "=== exit=$? ==="
-          echo "=== last 80 lines of build-dev.log ==="
-          tail -80 build-dev.log
+          ec=$?
+          echo "=== xcodebuild exit=$ec ==="
+          echo "=== last 100 lines of build-dev.log ==="
+          tail -100 build-dev.log
+          exit $ec
 
       - name: Package as .ipa
         run: |
           APP="build/Build/Products/Release-iphoneos/iospro.app"
-          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; ls -R build/Build/ 2>/dev/null || true; exit 1; fi
+          if [ ! -d "$APP" ]; then echo "App bundle not found at $APP"; exit 1; fi
           mkdir -p dist/Payload
           cp -R "$APP" dist/Payload/iospro.app
-          cd dist
-          zip -r ../iospro-device-unsigned.ipa Payload
-          cd ..
+          cd dist && zip -r ../iospro-device-unsigned.ipa Payload && cd ..
           ls -la iospro-device-unsigned.ipa
 
       - name: Upload device artifact
